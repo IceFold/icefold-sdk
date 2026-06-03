@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "icefold-sdk"
+version = "0.1.0"
+description = "Slim runner-side surface for IceFold: the worker WebSocket wire protocol plus a small on-runner helper kit (ids, logging, IO, exceptions). Installs as the top-level `icefold` package."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "IceFold" }]
+keywords = ["icefold", "runner", "sdk", "wire"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+]
+dependencies = [
+    "uuid-utils>=0.7",
+    # python-ulid imports ``typing_extensions.Self`` unconditionally, so declare
+    # it explicitly — otherwise icefold only imports when some other dep
+    # happens to pull typing-extensions in transitively.
+    "python-ulid>=3.1.0",
+    "typing-extensions>=4",
+]
+
+[project.urls]
+Homepage = "https://github.com/IceFold/icefold-sdk"
+Repository = "https://github.com/IceFold/icefold-sdk"
+
+[tool.setuptools.packages.find]
+include = ["icefold*"]
