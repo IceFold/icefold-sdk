@@ -33,6 +33,11 @@ handler.setFormatter(ColoredFormatter(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
+# We ship our own handler, so don't also bubble records to the root logger —
+# otherwise anything that configures a root handler (e.g. alembic's
+# ``fileConfig`` during the backend's startup migration) makes every line log
+# twice. Persistence/fan-out hooks live on the call seam, not on propagation.
+logger.propagate = False
 
 
 def log_info(category: str, message: str, **kwargs: Any) -> None:
