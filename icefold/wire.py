@@ -7,8 +7,8 @@ planner) and the worker streams back status then exactly one terminal frame.
 Keyed by ``call_id``.
 
 Frames are JSON objects. When an auth token is configured they travel as
-binary WS frames XOR'd with the token (see ``app.worker.crypto``); otherwise
-as plain-text JSON frames (dev fallback).
+binary WS frames XOR'd with the token (see ``icefold.crypto.xor_bytes``);
+otherwise as plain-text JSON frames (dev fallback).
 
   Server → Worker
     node_exec : run one leaf call. Carries node_type + node_config + inputs
@@ -19,13 +19,18 @@ as plain-text JSON frames (dev fallback).
     ping      : liveness probe; worker replies ``pong``.
 
   Worker → Server
-    hello       : sent once right after connect. Announces worker_id/version.
-    node_status : 0+ progress frames (phase + human message). Advisory only.
-    node_done   : exactly one terminal frame per call_id. Carries the node
-                  output (media paths already rewritten to server-canonical
-                  paths via the HTTP upload round-trip), plus err/killed.
-    ping        : upstream keepalive; server need not reply.
-    pong        : reply to a server ping.
+    hello        : sent once right after connect. Announces worker_id/version.
+    node_callback: 0+ mid-run frames. kind='progress' streams a phase + human
+                   message (session notification); kind='llm.*' asks the server
+                   to run a provider call it owns. Correlated by call_id + req_id;
+                   the server answers with node_callback_result.
+    node_done    : exactly one terminal frame per call_id. Carries the node
+                   output (media paths already rewritten to server-canonical
+                   paths via the HTTP upload round-trip), plus err/killed.
+    missing_dep  : sent in place of node_done when bundle pre-flight finds the
+                   runner host missing a declared python/binary dep.
+    ping         : upstream keepalive; server need not reply.
+    pong         : reply to a server ping.
 """
 
 from __future__ import annotations
@@ -42,6 +47,8 @@ SRV_NODE_CALLBACK_RESULT = "node_callback_result"
 
 # ── Worker → Server ──
 WKR_HELLO = "hello"
+# Reserved: an earlier progress channel. The current runner streams progress via
+# WKR_NODE_CALLBACK (kind='progress'), not this frame — kept for wire stability.
 WKR_NODE_STATUS = "node_status"
 WKR_NODE_DONE = "node_done"
 WKR_PING = "ping"

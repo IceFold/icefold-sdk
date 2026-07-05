@@ -23,8 +23,15 @@ def xor_bytes(data: bytes, key: bytes) -> bytes:
     """
     if not key:
         return data
+    ln = len(data)
+    if ln == 0:
+        return data
     n = len(key)
-    return bytes(b ^ key[i % n] for i, b in enumerate(data))
+    # Stretch/truncate the key to exactly len(data), then XOR at the C level as
+    # one big integer — orders of magnitude faster than a per-byte Python loop
+    # on every WS frame (this is the encode/decode hot path for every message).
+    full_key = key * (ln // n) + key[: ln % n] if n < ln else key[:ln]
+    return (int.from_bytes(data, "big") ^ int.from_bytes(full_key, "big")).to_bytes(ln, "big")
 
 
 if __name__ == "__main__":

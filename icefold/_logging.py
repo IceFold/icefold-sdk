@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any
 
 
@@ -18,20 +19,33 @@ class ColoredFormatter(logging.Formatter):
         logging.ERROR: Colors.RED,
     }
 
+    def __init__(self, *args: Any, use_color: bool = True, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.use_color = use_color
+
     def format(self, record):
-        color = self.COLORS.get(record.levelno, Colors.RESET)
         formatted = super().format(record)
+        # Only wrap in ANSI when the stream is a real terminal; a redirected
+        # stream (systemd journal, log file, pipe) would otherwise get raw
+        # escape codes littered through it.
+        if not self.use_color:
+            return formatted
+        color = self.COLORS.get(record.levelno, Colors.RESET)
         return f"{color}{formatted}{Colors.RESET}"
 
 
 handler = logging.StreamHandler()
+_use_color = bool(getattr(handler.stream, "isatty", None)) and handler.stream.isatty()
 handler.setFormatter(ColoredFormatter(
     fmt='%(asctime)s [%(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    datefmt='%Y-%m-%d %H:%M:%S',
+    use_color=_use_color,
 ))
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+# Default to INFO (not DEBUG) so importing the SDK doesn't force verbose logging
+# on every consumer; override with ICEFOLD_LOG_LEVEL (e.g. DEBUG) when needed.
+logger.setLevel(os.environ.get("ICEFOLD_LOG_LEVEL", "INFO").upper())
 logger.addHandler(handler)
 # We ship our own handler, so don't also bubble records to the root logger —
 # otherwise anything that configures a root handler (e.g. alembic's

@@ -20,11 +20,18 @@ What's here:
 
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
+
 from icefold._logging import log_debug, log_error, log_info, log_warning
 from icefold.ids import get_file_id
 from icefold.runtime import run_blocking, write_text
 
-__version__ = "0.1.0"
+# Prefer the installed distribution's real version so it can't silently drift
+# from a hardcoded literal; fall back when running from an uninstalled checkout.
+try:
+    __version__ = _pkg_version("icefold-sdk")
+except PackageNotFoundError:
+    __version__ = "0.1.0"
 
 __all__ = [
     "__version__",
