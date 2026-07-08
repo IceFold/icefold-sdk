@@ -12,7 +12,7 @@ What's here:
   * ``crypto``      — XOR-keystream framing for the worker WS
   * ``_logging``    — coloured stdout logger
   * ``ids``         — file id generation (used by output staging)
-  * ``config``      — ``DATA_DIR`` / ``DOWNLOAD_BASE_DIR`` / ``UPLOAD_BASE_DIR``
+  * ``config``      — ``DATA_DIR`` / ``TMP_BASE_DIR``
   * ``exceptions``  — ``AppError`` family + ``MissingDependencyError``
   * ``runtime``     — ``run_blocking`` + ``write_text`` (off-event-loop IO
                       helpers)
@@ -31,7 +31,7 @@ from icefold.runtime import run_blocking, write_text
 try:
     __version__ = _pkg_version("icefold-sdk")
 except PackageNotFoundError:
-    __version__ = "0.1.1"
+    __version__ = "0.1.2"
 
 __all__ = [
     "__version__",
