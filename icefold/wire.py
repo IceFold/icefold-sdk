@@ -93,6 +93,7 @@ def make_node_exec(
     bundle_url: str = "",
     python_deps: tuple = (),
     binary_deps: tuple = (),
+    dims: list | None = None,
 ) -> dict:
     """Build a ``node_exec`` frame.
 
@@ -116,6 +117,10 @@ def make_node_exec(
         "provider": provider,
         "model": model,
         "variant": variant,
+        # Per-space dimension definitions (id / values / tags) in wire form.
+        # Ships so tag-driven node branches (variant_has_tag / resolve_by_tag)
+        # resolve identically on a runner and in-process.
+        "dims": list(dims) if dims else [],
         "timeout_ms": int(timeout_ms),
         "bundle_hash": bundle_hash,
         "bundle_url": bundle_url or "",
