@@ -11,6 +11,6 @@ PROJECT_ROOT = os.environ.get("ICEFOLD_PROJECT_ROOT") or os.getcwd()
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 
 # Where a node writes its product files: ephemeral scratch that the backend
-# promotes into the canonical Library store once the run succeeds. Named ``tmp``
+# promotes into the canonical Library store once the run succeeds. Named ``scratch``
 # to reflect that — the process running the node (backend or runner) owns it.
-TMP_BASE_DIR = os.path.join(DATA_DIR, "tmp")
+SCRATCH_BASE_DIR = os.path.join(DATA_DIR, "scratch")

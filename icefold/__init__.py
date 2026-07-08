@@ -12,7 +12,7 @@ What's here:
   * ``crypto``      — XOR-keystream framing for the worker WS
   * ``_logging``    — coloured stdout logger
   * ``ids``         — file id generation (used by output staging)
-  * ``config``      — ``DATA_DIR`` / ``TMP_BASE_DIR``
+  * ``config``      — ``DATA_DIR`` / ``SCRATCH_BASE_DIR``
   * ``exceptions``  — ``AppError`` family + ``MissingDependencyError``
   * ``runtime``     — ``run_blocking`` + ``write_text`` (off-event-loop IO
                       helpers)
