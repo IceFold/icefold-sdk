@@ -9,7 +9,6 @@ What's here:
 
   * ``wire``        — ``/v1/ws/worker`` frames (``make_node_exec``,
                       ``make_missing_dep``, ``binary_install_hint``)
-  * ``crypto``      — XOR-keystream framing for the worker WS
   * ``_logging``    — coloured stdout logger
   * ``ids``         — file id generation (used by output staging)
   * ``config``      — ``DATA_DIR`` / ``SCRATCH_BASE_DIR``
@@ -31,7 +30,7 @@ from icefold.runtime import run_blocking, write_text
 try:
     __version__ = _pkg_version("icefold-sdk")
 except PackageNotFoundError:
-    __version__ = "0.1.2"
+    __version__ = "0.1.3"
 
 __all__ = [
     "__version__",
