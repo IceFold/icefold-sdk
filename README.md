@@ -23,7 +23,6 @@ wire protocol to dial back, then imports server-rendered bundles to run jobs.
 | Module | What |
 |---|---|
 | `icefold.wire` | `/v1/ws/worker` frames: `make_node_exec`, `make_missing_dep`, `binary_install_hint`; constants (`SRV_NODE_EXEC`, `WKR_NODE_DONE`, …); `OUTPUT_UPLOAD_PATH` |
-| `icefold.crypto` | XOR-keystream framing for the worker WS (`xor_bytes`) |
 | `icefold._logging` | Coloured stdout logger (`log_info`, `log_warning`, `log_error`, `log_debug`) |
 | `icefold.ids` | `get_file_id()` — time-ordered unique id for output filenames |
 | `icefold.config` | `DATA_DIR` / `DOWNLOAD_BASE_DIR` / `UPLOAD_BASE_DIR` (driven by `ICEFOLD_PROJECT_ROOT`) |
