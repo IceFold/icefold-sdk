@@ -30,7 +30,7 @@ from icefold.runtime import run_blocking, write_text
 try:
     __version__ = _pkg_version("icefold-sdk")
 except PackageNotFoundError:
-    __version__ = "0.1.3"
+    __version__ = "0.1.4"
 
 __all__ = [
     "__version__",

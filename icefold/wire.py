@@ -94,6 +94,7 @@ def make_node_exec(
     python_deps: tuple = (),
     binary_deps: tuple = (),
     dims: list | None = None,
+    gpu: bool = False,
 ) -> dict:
     """Build a ``node_exec`` frame.
 
@@ -101,6 +102,13 @@ def make_node_exec(
     node and cached it; the runner fetches the bundle from ``bundle_url`` (or
     its local cache), pre-flights ``python_deps`` + ``binary_deps``, and calls
     ``__icefold_run__``.
+
+    ``gpu`` declares which of the runner's two concurrency lanes this node
+    belongs in: the serialized GPU lane (it loads a model into VRAM, and two at
+    once thrash the card) or the parallel CPU lane (ffmpeg & friends). The
+    server always sends it explicitly — a runner that finds the key ABSENT is
+    talking to a pre-lane server and must serialize everything, which is exactly
+    what that server already assumed.
     """
     if not bundle_hash:
         raise ValueError("make_node_exec requires bundle_hash (bundle-only wire)")
@@ -126,6 +134,9 @@ def make_node_exec(
         "bundle_url": bundle_url or "",
         "python_deps": list(python_deps),
         "binary_deps": list(binary_deps),
+        # Which runner lane this node runs in. See the docstring: absent (not
+        # false) is what an older server sends, and means "serialize me".
+        "gpu": bool(gpu),
     }
 
 
@@ -234,6 +245,18 @@ if __name__ == "__main__":
     assert frame["type"] == SRV_NODE_EXEC and frame["bundle_hash"] == "abc"
     assert frame["binary_deps"] == ["ffmpeg"]
     assert "node_source" not in frame, "wire is bundle-only"
+
+    # Lane. The server always states it — ABSENCE is what an older server sends,
+    # and the runner reads that as "serialize me". So the key must be present
+    # even when false, or every node would land in the GPU lane.
+    assert frame["gpu"] is False, "lane must be stated explicitly, not omitted"
+    gpu_frame = make_node_exec(
+        call_id="c3", node_id="n3", node_type="ComposeVideo", node_config={},
+        inputs={}, user_id="u", session_id=None, space_name=None,
+        provider={}, model="", variant={}, timeout_ms=30_000,
+        bundle_hash="abc", gpu=True,
+    )
+    assert gpu_frame["gpu"] is True
 
     # Bundle-only: an omitted bundle_hash is a programmer error.
     try:
