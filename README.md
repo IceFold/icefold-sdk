@@ -22,10 +22,10 @@ wire protocol to dial back, then imports server-rendered bundles to run jobs.
 
 | Module | What |
 |---|---|
-| `icefold.wire` | `/v1/ws/worker` frames: `make_node_exec`, `make_missing_dep`, `binary_install_hint`; constants (`SRV_NODE_EXEC`, `WKR_NODE_DONE`, …); `OUTPUT_UPLOAD_PATH` |
+| `icefold.wire` | `/v1/ws/worker` frames: `make_node_exec`, `make_missing_dep`, `binary_install_hint`; constants (`SRV_NODE_EXEC`, `WKR_NODE_DONE`, …); worker output endpoint constant |
 | `icefold._logging` | Coloured stdout logger (`log_info`, `log_warning`, `log_error`, `log_debug`) |
 | `icefold.ids` | `get_file_id()` — time-ordered unique id for output filenames |
-| `icefold.config` | `DATA_DIR` / `DOWNLOAD_BASE_DIR` / `UPLOAD_BASE_DIR` (driven by `ICEFOLD_PROJECT_ROOT`) |
+| `icefold.config` | `DATA_DIR` / `SCRATCH_BASE_DIR` (driven by `ICEFOLD_PROJECT_ROOT`) |
 | `icefold.exceptions` | `AppError` family + `MissingDependencyError` |
 | `icefold.runtime` | `run_blocking(fn, *a, **kw)` + `write_text(path, content)` — off-event-loop IO helpers |
 | `icefold.__init__` | Slim re-export: `log_* / get_file_id / run_blocking / write_text` |

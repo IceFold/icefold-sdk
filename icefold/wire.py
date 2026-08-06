@@ -6,9 +6,8 @@ invocation (already sliced to a single variant by the server-side variant
 planner) and the worker streams back status then exactly one terminal frame.
 Keyed by ``call_id``.
 
-Frames are JSON objects. When an auth token is configured they travel as
-binary WS frames XOR'd with the token (see ``icefold.crypto.xor_bytes``);
-otherwise as plain-text JSON frames (dev fallback).
+Frames are plain JSON text. TLS protects the channel, and the runner token is
+sent in the ``X-Worker-Token`` handshake header rather than in a frame or URL.
 
   Server → Worker
     node_exec : run one leaf call. Carries node_type + node_config + inputs
@@ -106,9 +105,8 @@ def make_node_exec(
     ``gpu`` declares which of the runner's two concurrency lanes this node
     belongs in: the serialized GPU lane (it loads a model into VRAM, and two at
     once thrash the card) or the parallel CPU lane (ffmpeg & friends). The
-    server always sends it explicitly — a runner that finds the key ABSENT is
-    talking to a pre-lane server and must serialize everything, which is exactly
-    what that server already assumed.
+    server sends it explicitly. If the key is absent, the safe default is the
+    serialized GPU lane.
     """
     if not bundle_hash:
         raise ValueError("make_node_exec requires bundle_hash (bundle-only wire)")
@@ -134,8 +132,8 @@ def make_node_exec(
         "bundle_url": bundle_url or "",
         "python_deps": list(python_deps),
         "binary_deps": list(binary_deps),
-        # Which runner lane this node runs in. See the docstring: absent (not
-        # false) is what an older server sends, and means "serialize me".
+        # Which runner lane this node runs in. Absence means "serialize me";
+        # false must therefore remain an explicit value.
         "gpu": bool(gpu),
     }
 
@@ -246,9 +244,8 @@ if __name__ == "__main__":
     assert frame["binary_deps"] == ["ffmpeg"]
     assert "node_source" not in frame, "wire is bundle-only"
 
-    # Lane. The server always states it — ABSENCE is what an older server sends,
-    # and the runner reads that as "serialize me". So the key must be present
-    # even when false, or every node would land in the GPU lane.
+    # The server always states the lane. The key must be present even when
+    # false, because absence safely resolves to serialized execution.
     assert frame["gpu"] is False, "lane must be stated explicitly, not omitted"
     gpu_frame = make_node_exec(
         call_id="c3", node_id="n3", node_type="ComposeVideo", node_config={},
