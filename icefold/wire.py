@@ -10,6 +10,8 @@ Frames are plain JSON text. TLS protects the channel, and the runner token is
 sent in the ``X-Worker-Token`` handshake header rather than in a frame or URL.
 
   Server → Worker
+    worker_ready: acknowledges ``hello`` and advertises whether in-flight calls
+                  survive a transient WebSocket replacement.
     node_exec : run one leaf call. Carries node_type + node_config + inputs
                 (with media paths rewritten to URL paths the worker GETs),
                 resolved provider/model, the variant coordinate, and a
@@ -38,6 +40,7 @@ from __future__ import annotations
 SRV_NODE_EXEC = "node_exec"
 SRV_CANCEL = "cancel"
 SRV_PING = "ping"
+SRV_WORKER_READY = "worker_ready"
 # Reply to a ``WKR_NODE_CALLBACK`` request: the server resolved the requested
 # capability (provider call for ``llm.*``; notification for ``progress``)
 # and is returning the result. ``ok=False`` carries the error text so the
@@ -72,6 +75,19 @@ OUTPUT_UPLOAD_PATH = "/v1/workers/output"
 # because cpu_bound media work (long transcodes) legitimately runs for
 # minutes; the server-side await adds a grace margin on top of this.
 DEFAULT_EXEC_TIMEOUT_MS = 30 * 60 * 1000
+
+
+def make_worker_ready(*, resume_inflight: bool) -> dict:
+    """Acknowledge ``hello`` and negotiate connection-recovery behaviour.
+
+    Old servers never send this frame, so a new runner keeps its legacy
+    disconnect behaviour unless support is explicitly advertised. Old runners
+    ignore the unknown frame, making rolling upgrades safe in both directions.
+    """
+    return {
+        "type": SRV_WORKER_READY,
+        "resume_inflight": bool(resume_inflight),
+    }
 
 
 def make_node_exec(
@@ -232,6 +248,9 @@ def make_missing_dep(
 
 
 if __name__ == "__main__":
+    ready = make_worker_ready(resume_inflight=True)
+    assert ready == {"type": SRV_WORKER_READY, "resume_inflight": True}
+
     # Bundle path: server-side rendered, hash + URL + dep manifest only.
     frame = make_node_exec(
         call_id="c1", node_id="n1", node_type="UpperText", node_config={},
