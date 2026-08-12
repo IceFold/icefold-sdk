@@ -12,10 +12,10 @@ sent in the ``X-Worker-Token`` handshake header rather than in a frame or URL.
   Server → Worker
     worker_ready: acknowledges ``hello`` and advertises whether in-flight calls
                   survive a transient WebSocket replacement.
-    node_exec : run one leaf call. Carries node_type + node_config + inputs
-                (with media paths rewritten to URL paths the worker GETs),
-                resolved provider/model, the variant coordinate, and a
-                per-call timeout.
+    node_exec : run one leaf call. Carries node_type + node_config, the sliced
+                inputs and complete variant input storage (with media paths
+                rewritten to URL paths the worker GETs), resolved provider/model,
+                the variant coordinate, and a per-call timeout.
     cancel    : kill the in-flight call_id (best-effort).
     ping      : liveness probe; worker replies ``pong``.
 
@@ -97,6 +97,7 @@ def make_node_exec(
     node_type: str,
     node_config: dict,
     inputs: dict,
+    raw_inputs: dict,
     user_id: str,
     session_id: str | None,
     space_name: str | None,
@@ -105,11 +106,11 @@ def make_node_exec(
     variant: dict,
     timeout_ms: int,
     bundle_hash: str,
+    gpu: bool,
     bundle_url: str = "",
     python_deps: tuple = (),
     binary_deps: tuple = (),
     dims: list | None = None,
-    gpu: bool = False,
 ) -> dict:
     """Build a ``node_exec`` frame.
 
@@ -121,11 +122,14 @@ def make_node_exec(
     ``gpu`` declares which of the runner's two concurrency lanes this node
     belongs in: the serialized GPU lane (it loads a model into VRAM, and two at
     once thrash the card) or the parallel CPU lane (ffmpeg & friends). The
-    server sends it explicitly. If the key is absent, the safe default is the
-    serialized GPU lane.
+    server must send it explicitly.
     """
     if not bundle_hash:
         raise ValueError("make_node_exec requires bundle_hash (bundle-only wire)")
+    if not isinstance(raw_inputs, dict):
+        raise ValueError("make_node_exec requires raw_inputs")
+    if not isinstance(gpu, bool):
+        raise ValueError("make_node_exec requires an explicit boolean gpu lane")
     return {
         "type": SRV_NODE_EXEC,
         "call_id": call_id,
@@ -133,6 +137,7 @@ def make_node_exec(
         "node_type": node_type,
         "node_config": node_config,
         "inputs": inputs,
+        "raw_inputs": raw_inputs,
         "user_id": user_id,
         "session_id": session_id or "",
         "space_name": space_name or "",
@@ -148,9 +153,7 @@ def make_node_exec(
         "bundle_url": bundle_url or "",
         "python_deps": list(python_deps),
         "binary_deps": list(binary_deps),
-        # Which runner lane this node runs in. Absence means "serialize me";
-        # false must therefore remain an explicit value.
-        "gpu": bool(gpu),
+        "gpu": gpu,
     }
 
 
@@ -254,21 +257,22 @@ if __name__ == "__main__":
     # Bundle path: server-side rendered, hash + URL + dep manifest only.
     frame = make_node_exec(
         call_id="c1", node_id="n1", node_type="UpperText", node_config={},
-        inputs={"text": "hi"}, user_id="u", session_id=None, space_name=None,
+        inputs={"text": "hi"}, raw_inputs={"text": {"lang=en": "hi"}},
+        user_id="u", session_id=None, space_name=None,
         provider={}, model="", variant={}, timeout_ms=30_000,
         bundle_hash="abc", bundle_url="http://srv/v1/bundles/abc",
-        python_deps=(), binary_deps=("ffmpeg",),
+        python_deps=(), binary_deps=("ffmpeg",), gpu=False,
     )
     assert frame["type"] == SRV_NODE_EXEC and frame["bundle_hash"] == "abc"
     assert frame["binary_deps"] == ["ffmpeg"]
     assert "node_source" not in frame, "wire is bundle-only"
 
     # The server always states the lane. The key must be present even when
-    # false, because absence safely resolves to serialized execution.
+    # false; the runner never infers protocol state.
     assert frame["gpu"] is False, "lane must be stated explicitly, not omitted"
     gpu_frame = make_node_exec(
         call_id="c3", node_id="n3", node_type="ComposeVideo", node_config={},
-        inputs={}, user_id="u", session_id=None, space_name=None,
+        inputs={}, raw_inputs={}, user_id="u", session_id=None, space_name=None,
         provider={}, model="", variant={}, timeout_ms=30_000,
         bundle_hash="abc", gpu=True,
     )
@@ -278,9 +282,9 @@ if __name__ == "__main__":
     try:
         make_node_exec(
             call_id="c2", node_id="n2", node_type="OldNode", node_config={},
-            inputs={}, user_id="u", session_id=None, space_name=None,
+            inputs={}, raw_inputs={}, user_id="u", session_id=None, space_name=None,
             provider={}, model="", variant={}, timeout_ms=30_000,
-            bundle_hash="",
+            bundle_hash="", gpu=False,
         )
     except ValueError:
         pass
