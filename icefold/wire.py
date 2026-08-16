@@ -20,7 +20,10 @@ sent in the ``X-Worker-Token`` handshake header rather than in a frame or URL.
     ping      : liveness probe; worker replies ``pong``.
 
   Worker → Server
-    hello        : sent once right after connect. Announces worker_id/version.
+    hello        : sent once right after connect. Announces worker_id/version,
+                   host metadata, capabilities, and the effective
+                   cpu_concurrency / gpu_concurrency lane widths. Servers
+                   must treat both additive fields as optional for old peers.
     node_callback: 0+ mid-run frames. kind='progress' streams a phase + human
                    message (session notification); kind='llm.*' asks the server
                    to run a provider call it owns. Correlated by call_id + req_id;

@@ -22,7 +22,7 @@ wire protocol to dial back, then imports server-rendered bundles to run jobs.
 
 | Module | What |
 |---|---|
-| `icefold.wire` | `/v1/ws/worker` frames: `make_node_exec`, `make_worker_ready`, `make_missing_dep`, `binary_install_hint`; constants (`SRV_NODE_EXEC`, `SRV_WORKER_READY`, `WKR_NODE_DONE`, …); worker output endpoint constant |
+| `icefold.wire` | `/v1/ws/worker` frames, including optional CPU/GPU lane widths in runner `hello`: `make_node_exec`, `make_worker_ready`, `make_missing_dep`, `binary_install_hint`; constants (`SRV_NODE_EXEC`, `SRV_WORKER_READY`, `WKR_NODE_DONE`, …); worker output endpoint constant |
 | `icefold._logging` | Coloured stdout logger (`log_info`, `log_warning`, `log_error`, `log_debug`) |
 | `icefold.ids` | `get_file_id()` — time-ordered unique id for output filenames |
 | `icefold.config` | `DATA_DIR` / `SCRATCH_BASE_DIR` (driven by `ICEFOLD_PROJECT_ROOT`) |
